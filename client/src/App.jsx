@@ -11,6 +11,7 @@ import {
   Asset,
 } from "diamante-sdk-js";
 
+
 function App() {
   const [issuer, setIssuer] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +25,7 @@ function App() {
         Accept: "*/*",
       };
 
-      let response = await fetch("http://localhost:3000/create_issuer", {
+      let response = await fetch("http://13.233.14.66:5000/create_issuer", {
         method: "GET",
         headers: headersList,
       });
@@ -87,7 +88,7 @@ function App() {
       asset_name: assetName,
     });
 
-    let response = await fetch("http://localhost:3000/create_asset", {
+    let response = await fetch("http://13.233.14.66:5000/create_asset", {
       method: "POST",
       body: bodyContent,
       headers: headersList,
@@ -176,7 +177,7 @@ function App() {
 
     console.log(asset)
 
-    let response = await fetch("http://localhost:3000/mint_asset", {
+    let response = await fetch("http://13.233.14.66:5000/mint_asset", {
       method: "POST",
       body: bodyContent,
       headers: headersList,

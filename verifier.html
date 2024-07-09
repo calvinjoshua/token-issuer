@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Wallet and Render Assets</title>
+    <script>
+        async function connectAndFetchAssets() {
+            try {
+                const ext_resp = await window.diam.connect();
+                if (ext_resp.status === 200) {
+                    let address = ext_resp.message[0];
+                    let headersList = {
+                        "Accept": "*/*",
+                        "User-Agent": "Thunder Client (https://www.thunderclient.com)"
+                    };
+
+                    let response = await fetch("https://diamtestnet.diamcircle.io/accounts/GDA6XF54W5APJRN4Z2MJOTFA3LQCPWBH5PGJX4YHOKI5VTLFAZWZ2UCG", {
+                        method: "GET",
+                        headers: headersList
+                    });
+
+                    let data = await response.json();
+                    var assets = data.balances;
+
+                    // Render assets array in the UI as checkboxes
+                    renderAssets(assets);
+                } else {
+                    console.error("Failed to connect to wallet:", ext_resp.message);
+                }
+            } catch (error) {
+                console.error("Error connecting and fetching assets:", error);
+            }
+        }
+
+        function renderAssets(assets) {
+            let assetsList = document.getElementById("assetsList");
+            assetsList.innerHTML = ""; // Clear previous content
+
+            assets.forEach(asset => {
+                let assetCheckbox = document.createElement("input");
+                assetCheckbox.type = "checkbox";
+                assetCheckbox.id = asset.asset_code;
+                assetCheckbox.value = JSON.stringify(asset); // Store asset data in value attribute
+                assetCheckbox.onclick = function () {
+                    verify(asset);
+                };
+
+                let label = document.createElement("label");
+                label.htmlFor = asset.asset_code;
+                label.textContent = `${asset.asset_code} - ${asset.balance}`;
+
+                assetsList.appendChild(assetCheckbox);
+                assetsList.appendChild(label);
+                assetsList.appendChild(document.createElement("br"));
+            });
+        }
+
+        async function verify(asset) {
+            console.log("Selected Asset Data:");
+            console.log(asset.asset_issuer);
+            let headersList = {
+                "Accept": "*/*",
+                "User-Agent": "Thunder Client (https://www.thunderclient.com)"
+            }
+
+            let response = await fetch("https://diamtestnet.diamcircle.io/accounts/" + asset.asset_issuer + "/operations", {
+                method: "GET",
+                headers: headersList
+            });
+
+            let data = await response.json();
+            console.log(data._embedded.records[0].funder);
+
+
+            //Issuer is hardcoded, but issuer public is copied  from server/keypair.json
+            let issuer = "GBJVOZTXQWP3ZEVWBENFEW5KZPJILUC5T2O5ZIVSDYJWIFTPBULWB23R"
+            if (data._embedded.records[0].funder === issuer) {
+                alert("asset verified")
+
+
+                let headersList = {
+                    "Accept": "*/*",
+                    "User-Agent": "Thunder Client (https://www.thunderclient.com)"
+                }
+
+                let response = await fetch("https://diamtestnet.diamcircle.io/accounts/GBGGNVPG5ND73JEVELYCUI7JCGOEF7KRJKMEYMNENEEX5HAITNKJFZOJ/", {
+                    method: "GET",
+                    headers: headersList
+                });
+
+                let data = await response.json();
+                console.log(data.data, " meta data CID");
+            }else{
+                alert("unsupported asset")
+
+            }
+
+        }
+    </script>
+</head>
+
+<body>
+    <h2>Connect Wallet and Render Assets</h2>
+    <button onclick="connectAndFetchAssets()">Connect Wallet</button>
+    <div id="assetsList">
+        <!-- Assets will be rendered here -->
+    </div>
+</body>
+
+</html>
