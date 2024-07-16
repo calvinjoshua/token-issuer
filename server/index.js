@@ -5,7 +5,8 @@ const cors = require("cors");
 const { error } = require("console");
 
 var intermediary_keypair;
-
+// var intermediary_keypair = diamSdk.Keypair.fromSecret("SBHQSCE3TDIWCOIS6EO44P7IOWUV6FWXRJNSVLKTZ6JNVE2YMCZWYKS2");
+//GDLFF2K6CRSGQ322H6ND2XYXMXG2EMOZB2G4KKGSP5PPZSUYT3C3SIAY SBHQSCE3TDIWCOIS6EO44P7IOWUV6FWXRJNSVLKTZ6JNVE2YMCZWYKS2
 // const intermediary_keypair = diamSdk.Keypair.fromSecret("SDVQ742V2GZZBAIKUKG7DET55KQOMS633A4FXE67Q2C7TZEI4IQWQBRH");
 
 
@@ -17,10 +18,15 @@ app.use(cors());
 app.get("/create_issuer", (req, res) => {
   const keypair = diamSdk.Keypair.random();
 
+
+
+
   const keys_object = {
     public_key: keypair.publicKey(),
     private_key: keypair.secret(),
   };
+
+
 
   const keys = JSON.stringify(keys_object);
 
@@ -37,10 +43,48 @@ app.get("/create_issuer", (req, res) => {
   });
 });
 
+app.post("/get-dapp-owner-account", (req, res) => {
+
+  // intermediary_keypair = diamSdk.Keypair.random();
+
+
+  try {
+    let keys;
+    fs.readFile("keypair.json", "utf8", async (err, data) => {
+      if (err) {
+        res.send({
+          error: "Error reading file",
+          data: null,
+        });
+      } else {
+        keys = JSON.parse(data);
+        res.send({
+          error: null,
+          data: {
+            // intermediar_address: intermediary_keypair.publicKey(),
+            dapp_owner: keys.public_key
+          },
+        });
+      }
+    })
+
+  } catch (e) {
+    res.send({
+      error: e,
+      data: null,
+    });
+  }
+
+})
+
+
+
 app.post("/create_asset", (req, res) => {
   const asset_name = req.body.asset_name;
 
   intermediary_keypair = diamSdk.Keypair.random();
+
+  console.log(intermediary_keypair.publicKey(), intermediary_keypair.secret())
 
   let keys;
   fs.readFile("keypair.json", "utf8", async (err, data) => {
@@ -79,7 +123,8 @@ app.post("/create_asset", (req, res) => {
             error: null,
             data: {
               asset_name: asset_name,
-              issuer_address: intermediary_keypair.publicKey(),
+              // issuer_address: intermediary_keypair.publicKey(),
+              intermediary_address: intermediary_keypair.publicKey()
             },
           });
         } else {
