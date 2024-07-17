@@ -14,7 +14,7 @@ import {
 
 function App() {
   const [issuer, setIssuer] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [message, setmessage] = useState("");
   const [myAddress, setMyAddress] = useState("");
   const [assetName, setAssetName] = useState("");
   const [asset, setAsset] = useState("");
@@ -22,26 +22,38 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   const handleMakeIssuer = async () => {
+
+    setLoading(true)
+    setmessage("creating issuer keypair for dapp owner")
     try {
       let headersList = {
         Accept: "*/*",
       };
 
-      let response = await fetch("http://13.233.14.66:5000/create_issuer", {
+      let response = await fetch("http://localhost:5000/create_issuer", {
         method: "GET",
         headers: headersList,
       });
 
       let data = await response.json();
       setIssuer(data.issuer);
+      setLoading(false)
+
     } catch (e) {
       console.log(e);
+      setLoading(false)
+
     }
   };
 
   const handleFundIssuer = async () => {
+
+
     const ext_resp = await window.diam.connect();
     if (ext_resp.status === 200) {
+
+      setLoading(true)
+      setmessage("funding issuer keypair")
       setMyAddress(ext_resp.message[0]);
 
       const server = new Horizon.Server("https://diamtestnet.diamcircle.io");
@@ -72,9 +84,12 @@ function App() {
         alert("Something went wrong!");
       }
 
-      console.log(resp.toString(), "Checkkkkk");
+      console.log(resp.toString(), "Check status");
+
+      setLoading(false)
     } else {
       alert("Error");
+      setLoading(false)
     }
   };
 
@@ -84,19 +99,22 @@ function App() {
       alert("Something went wrong opening extension")
 
     }
+
+    setLoading(true)
+    setmessage("fetching issuer pubic address to pay the fee")
     // setMyAddress(ext_resp.message[0]);
 
     var headersList = {
       "Accept": "*/*",
     }
 
-    var response = await fetch("http://13.233.14.66:5000/get-dapp-owner-account", {
+    var response = await fetch("http://localhost:5000/get-dapp-owner-account", {
       method: "POST",
       headers: headersList
     });
 
     var data = await response.json();
-    console.log("intermediar account created ", data.data);
+    console.log("dapp issuer address received ", data.data);
 
 
 
@@ -143,8 +161,8 @@ function App() {
       asset_name: assetName,
     });
 
-    setLoading(true)
-    response = await fetch("http://13.233.14.66:5000/create_asset", {
+    setmessage("creating IA account with the fee paid")
+    response = await fetch("http://localhost:5000/create_asset", {
       method: "POST",
       body: bodyContent,
       headers: headersList,
@@ -161,9 +179,6 @@ function App() {
 
 
     setAsset(assetName);
-
-    //intermediar_address should be valid beofre trustline can be created
-
 
     const asset = new Asset(data.data.asset_name, data.data.intermediary_address);
     setLoading(false)
@@ -190,7 +205,8 @@ function App() {
 
   const handleTransferAsset = async () => {
 
-
+    setLoading(true)
+    setmessage("minting the asset from IA to user account ")
     let headersList = {
       Accept: "*/*",
       "Content-Type": "application/json",
@@ -205,7 +221,7 @@ function App() {
 
     console.log(asset)
 
-    let response = await fetch("http://13.233.14.66:5000/mint_asset", {
+    let response = await fetch("http://localhost:5000/mint_asset", {
       method: "POST",
       body: bodyContent,
       headers: headersList,
@@ -215,7 +231,7 @@ function App() {
     console.log(data);
 
     if (data.data === "Asset transfered") {
-      alert(asset, "Asset Minted")
+      setmessage("Asset Minted")
     }
   };
 
@@ -275,7 +291,7 @@ function App() {
 
       {loading && (
         <div style={{ marginTop: '20px', color: 'blue' }}>
-          Creating intermediary account...
+          {message}
         </div>
       )}
     </>

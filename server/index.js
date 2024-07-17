@@ -3,9 +3,15 @@ const diamSdk = require("diamante-sdk-js");
 const fs = require("fs");
 const cors = require("cors");
 const { error } = require("console");
+const { create } = require('ipfs-http-client');
+// const create = require('kubo-rpc-client')
+
+// const client = create({ url: "https://uploadipfs.diamcircle.io" });
+const client = create(new URL("https://uploadipfs.diamcircle.io"))
+
 
 var intermediary_keypair;
-// var intermediary_keypair = diamSdk.Keypair.fromSecret("SBHQSCE3TDIWCOIS6EO44P7IOWUV6FWXRJNSVLKTZ6JNVE2YMCZWYKS2");
+// var intermediary_keypair = diamSdk.Keypair.fromSecret("SDFKGRRQIX5HFEICU6SYPYRXMVS6MQUETU5KIP3JVKTCTM3UCDV7TJG4");
 //GDLFF2K6CRSGQ322H6ND2XYXMXG2EMOZB2G4KKGSP5PPZSUYT3C3SIAY SBHQSCE3TDIWCOIS6EO44P7IOWUV6FWXRJNSVLKTZ6JNVE2YMCZWYKS2
 // const intermediary_keypair = diamSdk.Keypair.fromSecret("SDVQ742V2GZZBAIKUKG7DET55KQOMS633A4FXE67Q2C7TZEI4IQWQBRH");
 
@@ -109,7 +115,7 @@ app.post("/create_asset", (req, res) => {
           .addOperation(
             diamSdk.Operation.createAccount({
               destination: intermediary_keypair.publicKey(),
-              startingBalance: "3",
+              startingBalance: "4",
             })
           )
           .setTimeout(0)
@@ -144,6 +150,9 @@ app.post("/create_asset", (req, res) => {
 });
 
 app.post("/mint_asset", async (req, res) => {
+
+
+
   const receiver_addr = req.body.address;
   const asset_name = req.body.asset_name;
 
@@ -155,12 +164,30 @@ app.post("/mint_asset", async (req, res) => {
       "https://diamtestnet.diamcircle.io"
     );
 
+    console.log(asset_name, "asset name")
+
     const account = await server.loadAccount(intermediary_keypair.publicKey());
     const _asset = new diamSdk.Asset(
       asset_name,
       intermediary_keypair.publicKey()
     );
 
+    var metadataFormat = {}
+
+    metadataFormat.owner = receiver_addr
+
+
+    const metadataJSON = JSON.stringify(metadataFormat);
+    const { cid } = await client.add(metadataJSON)
+
+    //in metadata other fields supporting the asset can be added
+
+    // const { cid } = await client.add('Hello world!')
+
+    console.log('metadata uploaded successfully. IPFS hash:', cid.toString());
+
+    // return
+    // return result.path;
     const transaction = new diamSdk.TransactionBuilder(account, {
       fee: diamSdk.BASE_FEE,
       networkPassphrase: "Diamante Testnet",
@@ -172,19 +199,19 @@ app.post("/mint_asset", async (req, res) => {
           amount: "0.0000001",
         })
       )
-      // .addOperation
-      // (
-      //   diamSdk.Operation.manageData({
-      //     name: asset_name,
-      //     value: "QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB"
-      //   })
-      // )
-      // .addOperation(
-      //   diamSdk.Operation.setOptions({
-      //     masterWeight: 0,
-      //   })
-      // )
-      .setTimeout(0)
+      .addOperation
+      (
+        diamSdk.Operation.manageData({
+          name: asset_name,
+          value: cid.toString()
+        })
+      )
+      .addOperation(
+        diamSdk.Operation.setOptions({
+          masterWeight: 0,
+        })
+      )
+      .setTimeout(100)
       .build();
 
     transaction.sign(intermediary_keypair);

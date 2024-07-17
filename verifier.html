@@ -8,6 +8,9 @@
     <script>
         async function connectAndFetchAssets() {
             try {
+
+
+
                 const ext_resp = await window.diam.connect();
                 if (ext_resp.status === 200) {
                     let address = ext_resp.message[0];
@@ -16,7 +19,7 @@
                         "User-Agent": "Thunder Client (https://www.thunderclient.com)"
                     };
 
-                    let response = await fetch("https://diamtestnet.diamcircle.io/accounts/GDA6XF54W5APJRN4Z2MJOTFA3LQCPWBH5PGJX4YHOKI5VTLFAZWZ2UCG", {
+                    let response = await fetch("https://diamtestnet.diamcircle.io/accounts/" + ext_resp.message[0], {
                         method: "GET",
                         headers: headersList
                     });
@@ -25,7 +28,7 @@
                     var assets = data.balances;
 
                     // Render assets array in the UI as checkboxes
-                    renderAssets(assets);
+                    renderAssets(assets, ext_resp.message[0]);
                 } else {
                     console.error("Failed to connect to wallet:", ext_resp.message);
                 }
@@ -34,7 +37,7 @@
             }
         }
 
-        function renderAssets(assets) {
+        function renderAssets(assets, userWallet) {
             let assetsList = document.getElementById("assetsList");
             assetsList.innerHTML = ""; // Clear previous content
 
@@ -44,7 +47,7 @@
                 assetCheckbox.id = asset.asset_code;
                 assetCheckbox.value = JSON.stringify(asset); // Store asset data in value attribute
                 assetCheckbox.onclick = function () {
-                    verify(asset);
+                    verify(asset, userWallet);
                 };
 
                 let label = document.createElement("label");
@@ -57,43 +60,96 @@
             });
         }
 
-        async function verify(asset) {
-            console.log("Selected Asset Data:");
-            console.log(asset.asset_issuer);
-            let headersList = {
-                "Accept": "*/*",
-                "User-Agent": "Thunder Client (https://www.thunderclient.com)"
-            }
-
-            let response = await fetch("https://diamtestnet.diamcircle.io/accounts/" + asset.asset_issuer + "/operations", {
-                method: "GET",
-                headers: headersList
-            });
-
-            let data = await response.json();
-            console.log(data._embedded.records[0].funder);
+        async function verify(asset, userWallet) {
+            try {
 
 
-            //Issuer is hardcoded, but issuer public is copied  from server/keypair.json
-            let issuer = "GBJVOZTXQWP3ZEVWBENFEW5KZPJILUC5T2O5ZIVSDYJWIFTPBULWB23R"
-            if (data._embedded.records[0].funder === issuer) {
-                alert("asset verified")
-
-
+                console.log("Selected Asset Data:");
+                console.log(asset.asset_issuer);
                 let headersList = {
                     "Accept": "*/*",
                     "User-Agent": "Thunder Client (https://www.thunderclient.com)"
                 }
 
-                let response = await fetch("https://diamtestnet.diamcircle.io/accounts/GBGGNVPG5ND73JEVELYCUI7JCGOEF7KRJKMEYMNENEEX5HAITNKJFZOJ/", {
+                let response = await fetch("https://diamtestnet.diamcircle.io/accounts/" + asset.asset_issuer + "/operations", {
                     method: "GET",
                     headers: headersList
                 });
 
                 let data = await response.json();
-                console.log(data.data, " meta data CID");
-            }else{
-                alert("unsupported asset")
+                console.log(data._embedded.records[0].funder);
+
+                headersList = {
+                    "Accept": "*/*",
+                }
+
+                response = await fetch("http://localhost:5000/get-dapp-owner-account", {
+                    method: "POST",
+                    headers: headersList
+                });
+
+                let data2 = await response.json();
+                let issuer = data2.data
+                console.log(data._embedded.records[0].funder, issuer.dapp_owner);
+
+                if (data._embedded.records[0].funder === issuer.dapp_owner) {
+                    alert("asset issued by supported dapp")
+
+
+                    let headersList = {
+                        "Accept": "*/*",
+                        "User-Agent": "Thunder Client (https://www.thunderclient.com)"
+                    }
+
+                    let response = await fetch("https://diamtestnet.diamcircle.io/accounts/" + asset.asset_issuer, {
+                        method: "GET",
+                        headers: headersList
+                    });
+
+                    let code = asset.code
+
+                    let data = await response.json();
+                    console.log(data.data[asset.asset_code], " meta data CdddID", asset.asset_code);
+
+                    var binaryString = atob(data.data[asset.asset_code]);
+
+                    // Convert binary to UTF-8 string
+                    var textDecoder = new TextDecoder('utf-8');
+                    var _decodedString = textDecoder.decode(new Uint8Array([...binaryString].map(function (char) {
+                        return char.charCodeAt(0);
+                    })));
+
+                    console.log(_decodedString);
+
+                    headersList = {
+                        "Accept": "*/*",
+                        "User-Agent": "Thunder Client (https://www.thunderclient.com)"
+                    }
+
+                    response = await fetch("https://browseipfs.diamcircle.io/ipfs/" + _decodedString, {
+                        method: "GET",
+                        headers: headersList
+                    });
+
+                    data = await response.json();
+                    console.log(data);
+
+                    if (data.owner === userWallet) {
+                        alert("asset verified")
+
+                    } else {
+                        alert("Unauthorized asset")
+
+                    }
+
+
+                } else {
+                    alert("unsupported asset, issuer not supported")
+
+                }
+            } catch (error) {
+                console.log(error)
+                alert("Something went wrong, check the console")
 
             }
 
