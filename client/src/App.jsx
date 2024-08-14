@@ -66,7 +66,7 @@ function App() {
         .addOperation(
           Operation.createAccount({
             destination: issuer,
-            startingBalance: "2",
+            startingBalance: "5",
           })
         )
         .setTimeout(0)
@@ -122,6 +122,16 @@ function App() {
     const server = new Horizon.Server("https://diamtestnet.diamcircle.io");
     const sourceAccount = await server.loadAccount(ext_resp.message[0]);
 
+    const feeStats = await server.feeStats()
+
+    // console.log(feeStats.last_ledger_base_fee, " check importanat")
+    const baseFeeJots = feeStats.last_ledger_base_fee;
+    const baseFee = baseFeeJots / 10 ** 7;
+
+
+    // net fee + 1 diam + 3 * net fee
+
+
     var transaction = new TransactionBuilder(sourceAccount, {
       fee: BASE_FEE,
       networkPassphrase: "Diamante Testnet",
@@ -130,7 +140,7 @@ function App() {
         Operation.payment({
           destination: data.data.dapp_owner, //
           asset: Asset.native(),
-          amount: "4", //in mainnet it would be 0.0000003 DIAM
+          amount: (3 + parseFloat(baseFee * 6)).toString(), // 1 DIAM for base reserve and adding extra base fee, incase base fee increase during IA creation
         })
       )
       //  .addOperation(Operation.changeTrust({ asset }))
@@ -300,3 +310,4 @@ function App() {
 }
 
 export default App;
+

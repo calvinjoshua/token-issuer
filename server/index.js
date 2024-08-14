@@ -115,7 +115,7 @@ app.post("/create_asset", (req, res) => {
           .addOperation(
             diamSdk.Operation.createAccount({
               destination: intermediary_keypair.publicKey(),
-              startingBalance: "4",
+              startingBalance: "2.00006",
             })
           )
           .setTimeout(0)
@@ -234,3 +234,7 @@ app.post("/mint_asset", async (req, res) => {
 app.listen(5000, () => {
   console.log("Server is running on port 3000");
 });
+
+
+// paying fee 1.0000600
+

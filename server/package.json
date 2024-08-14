@@ -4,11 +4,13 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "bip39": "^3.1.0",
     "cors": "^2.8.5",
     "diamante-sdk-js": "^1.0.3",
     "express": "^4.19.2",
     "ipfs-http-client": "^53.0.1",
     "kubo-rpc-client": "^4.1.1",
-    "patch-package": "^8.0.0"
+    "patch-package": "^8.0.0",
+    "stellar-sdk": "^12.2.0"
   }
 }
